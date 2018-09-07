@@ -6,12 +6,14 @@ from pyglet.window import Window, key
 import pyglet
 from pyglet.gl import glColor4f, glLineWidth, glBegin, glEnd, glHint
 from pyglet.gl import glVertex2f, glClearColor, glEnable, glBlendFunc
+from pyglet.gl import glRectf
 from pyglet.gl import GL_BLEND, GL_TRIANGLE_FAN, GL_LINES, GL_LINE_LOOP
 from pyglet.gl import GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA
 from pyglet.gl import GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA
 from pyglet.gl import GL_POINT_SMOOTH, GL_POINT_SMOOTH_HINT
 from pyglet.gl import GL_LINE_SMOOTH, GL_LINE_SMOOTH_HINT
 from pyglet.gl import GL_POLYGON_SMOOTH, GL_POLYGON_SMOOTH_HINT, GL_NICEST
+from pyglet.gl import GL_POINTS
 
 from math import pi, cos, sin, sqrt
 import os
@@ -50,6 +52,7 @@ class GraphicsContext:
         glEnable(GL_POINT_SMOOTH)
         glEnable(GL_LINE_SMOOTH)
         glEnable(GL_POLYGON_SMOOTH)
+        glHint(GL_POINT_SMOOTH_HINT, GL_NICEST)
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
         glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
 
@@ -97,12 +100,31 @@ class GraphicsContext:
     def fill_circle(self, x, y, r):
         self._circle(x, y, r, self._fill_color, True)
 
+    def fill_rect(self, x, y, w, h):
+        glColor4f(*self._fill_color)
+        glRectf(x, y, x + w, y + h)
+
+    def stroke_rect(self, x, y, w, h):
+        glColor4f(*self._stroke_color)
+        glBegin(GL_LINE_LOOP)
+        glVertex2f(x, y)
+        glVertex2f(x + w, y)
+        glVertex2f(x + w, y + h)
+        glVertex2f(x, y + h)
+        glEnd()
+
     def line(self, x1, y1, x2, y2):
         glColor4f(*self._stroke_color)
         glLineWidth(self._line_width)
         glBegin(GL_LINES)
         glVertex2f(x1, y1)
         glVertex2f(x2, y2)
+        glEnd()
+
+    def point(self, x, y):
+        glColor4f(*self._stroke_color)
+        glBegin(GL_POINTS)
+        glVertex2f(x, y)
         glEnd()
 
 class Mouse:
