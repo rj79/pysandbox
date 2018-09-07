@@ -12,6 +12,7 @@ from pyglet.gl import GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA
 from pyglet.gl import GL_POINT_SMOOTH, GL_POINT_SMOOTH_HINT
 from pyglet.gl import GL_LINE_SMOOTH, GL_LINE_SMOOTH_HINT
 from pyglet.gl import GL_POLYGON_SMOOTH, GL_POLYGON_SMOOTH_HINT, GL_NICEST
+
 from math import pi, cos, sin, sqrt
 import os
 
@@ -161,7 +162,7 @@ class Application(Window):
         glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_DST_ALPHA)
 
         self._gc = GraphicsContext()
-        pyglet.clock.schedule_interval(self._main_loop, 1 / 100)
+        pyglet.clock.schedule_interval(self._main_loop, 1 / 60)
         self.set_mouse_visible(False)
 
     @property
@@ -170,7 +171,6 @@ class Application(Window):
 
     def _main_loop(self, dt):
         self.do_update(dt)
-        self.do_draw(self._gc)
 
     def get_width(self):
         return self._width
@@ -200,8 +200,7 @@ class Application(Window):
         pass
 
     def on_draw(self):
-        # Ignore
-        pass
+        self.do_draw(self._gc)
 
     @property
     def mouse(self):
