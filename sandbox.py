@@ -7,7 +7,7 @@ import pyglet
 from pyglet.gl import glColor4f, glLineWidth, glBegin, glEnd, glHint
 from pyglet.gl import glVertex2f, glClearColor, glEnable, glBlendFunc
 from pyglet.gl import glRectf
-from pyglet.gl import GL_BLEND, GL_TRIANGLE_FAN, GL_LINES, GL_LINE_LOOP
+from pyglet.gl import GL_BLEND, GL_TRIANGLE_FAN, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP
 from pyglet.gl import GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA
 from pyglet.gl import GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA
 from pyglet.gl import GL_POINT_SMOOTH, GL_POINT_SMOOTH_HINT
@@ -42,6 +42,33 @@ class Point:
 
     def __repr__(self):
         return "<Point {} {}>".format(float(self.x), float(self.y))
+
+class Box:
+    def __init__(self, *args):
+        if len(args) == 4:
+            self._pos = Point(args[0], args[1])
+            self._width = args[2]
+            self._height = args[3]
+        elif len(args) == 1 and isinstance(args[0], Box):
+            self._pos = Point(args[0].x, args[0].y)
+            self._width = args[0]._width
+            self._height = args[0]._height
+
+    @property
+    def left(self):
+        return self._pos.x - self._width // 2
+
+    @property
+    def right(self):
+        return self._pos.x + self._width // 2
+
+    @property
+    def top(self):
+        return self._pos.y - self._height // 2
+
+    @property
+    def bottom(self):
+        return self._pos.y + self._height // 2
 
 
 class GraphicsContext:
@@ -120,6 +147,15 @@ class GraphicsContext:
         glVertex2f(x1, y1)
         glVertex2f(x2, y2)
         glEnd()
+
+    def lines(self, points):
+        glColor4f(*self._stroke_color)
+        glLineWidth(self._line_width)
+        glBegin(GL_LINE_STRIP)
+        for point in points:
+            glVertex2f(point[0], point[1])
+        glEnd()
+
 
     def point(self, x, y):
         glColor4f(*self._stroke_color)
@@ -221,6 +257,12 @@ class Application(Window):
     def do_mouse_release(self, x, y, button, modifiers):
         pass
 
+    def do_key_press(self, symbol, modifiers):
+        pass
+
+    def do_key_release(self, symbol, modifiers):
+        pass
+
     def on_draw(self):
         self.do_draw(self._gc)
 
@@ -254,10 +296,10 @@ class Application(Window):
         if symbol == key.ESCAPE:
             self.stop()
         else:
-            pass
+            self.do_key_press(symbol, modifiers)
 
     def on_key_release(self, symbol, modifiers):
-        pass
+        self.do_key_release(symbol, modifiers)
 
     def stop(self):
         pyglet.app.exit()
