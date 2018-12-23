@@ -28,7 +28,7 @@ class MyApp(sandbox.Application):
     def do_draw(self, gc):
         self.clear()
         gc.set_fill(1, 1, 0, 0.5)
-        gc.fill_circle(self.pos.x, self.pos.y, self.radius)
+        gc.fill_circle(self.pos, self.radius)
 
 
 if __name__ == '__main__':

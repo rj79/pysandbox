@@ -50,7 +50,7 @@ class Box:
             self._width = args[2]
             self._height = args[3]
         elif len(args) == 1 and isinstance(args[0], Box):
-            self._pos = Point(args[0].x, args[0].y)
+            self._pos = Point(args[0]._pos)
             self._width = args[0]._width
             self._height = args[0]._height
 
@@ -70,6 +70,14 @@ class Box:
     def bottom(self):
         return self._pos.y + self._height // 2
 
+    @property
+    def width(self):
+        return self._width
+
+    @property
+    def height(self):
+        return self._height
+    
 
 class GraphicsContext:
     def __init__(self):
@@ -98,7 +106,7 @@ class GraphicsContext:
     def set_line_width(self, width):
         self._line_width = width
 
-    def _circle(self, x, y, r, color, filled):
+    def _circle(self, point, r, color, filled):
         c = 2 * r * pi
         iterations = int(c / 2)
 
@@ -110,28 +118,45 @@ class GraphicsContext:
         glColor4f(*color)
         if filled:
             glBegin(GL_TRIANGLE_FAN)
-            glVertex2f(x, y)
+            glVertex2f(point.x, point.y)
         else:
             glLineWidth(self._line_width)
             glBegin(GL_LINE_LOOP)
-            glVertex2f(x + dx, y + dy)
+            glVertex2f(point.x + dx, point.y + dy)
 
         for i in range(int(iterations) + 1):
-            glVertex2f(x + dx, y + dy)
+            glVertex2f(point.x + dx, point.y + dy)
             dx, dy = (dx * c - dy * s), (dy * c + dx * s)
         glEnd()
 
-    def stroke_circle(self, x, y, r):
-        self._circle(x, y, r, self._stroke_color, False)
+    def stroke_circle(self, point, r):
+        self._circle(point, r, self._stroke_color, False)
 
-    def fill_circle(self, x, y, r):
-        self._circle(x, y, r, self._fill_color, True)
+    def fill_circle(self, point, r):
+        self._circle(point, r, self._fill_color, True)
 
-    def fill_rect(self, x, y, w, h):
+    def _decode_xywh(self, *args):
+        if len(args) == 4:
+            x = args[0]
+            y = args[1]
+            w = args[2]
+            h = args[3]
+        elif len(args) == 2 and isinstance(args[0], Point) and isinstance(args[1], Point):
+            x = args[0].x
+            y = args[0].y
+            w = args[1].x
+            h = args[1].y
+        else:
+            raise ValueError()
+        return x, y, w, h
+    
+    def fill_rect(self, *args):
+        x, y, w, h = self._decode_xywh(*args)
         glColor4f(*self._fill_color)
         glRectf(x, y, x + w, y + h)
 
-    def stroke_rect(self, x, y, w, h):
+    def stroke_rect(self, *args):
+        x, y, w, h = self._decode_xywh(*args)
         glColor4f(*self._stroke_color)
         glBegin(GL_LINE_LOOP)
         glVertex2f(x, y)
@@ -140,24 +165,29 @@ class GraphicsContext:
         glVertex2f(x, y + h)
         glEnd()
 
-    def line(self, x1, y1, x2, y2):
-        glColor4f(*self._stroke_color)
-        glLineWidth(self._line_width)
-        glBegin(GL_LINES)
-        glVertex2f(x1, y1)
-        glVertex2f(x2, y2)
-        glEnd()
-
-    def lines(self, points):
+    def lines(self, *points):
         glColor4f(*self._stroke_color)
         glLineWidth(self._line_width)
         glBegin(GL_LINE_STRIP)
         for point in points:
-            glVertex2f(point[0], point[1])
+            glVertex2f(point.x, point.y)
         glEnd()
 
+    def line_loop(self, *points):
+        if len(points) <= 2:
+            raise ValueError()
+        glColor4f(*self._stroke_color)
+        glLineWidth(self._line_width)
+        glBegin(GL_LINE_LOOP)
+        for point in points:
+            glVertex2f(point.x, point.y)
+        glEnd()
 
-    def point(self, x, y):
+    def point(self, *args):
+        if len(args) == 2:
+            x, y = args[0], args[1]
+        if len(args) == 1 and type(args[0]) == Point:
+            x, y = args.x, args.y         
         glColor4f(*self._stroke_color)
         glBegin(GL_POINTS)
         glVertex2f(x, y)
@@ -193,13 +223,13 @@ class Mouse:
 
     @property
     def pos(self):
-        return (self._x, self._y)
+        return Point(self._x, self._y)
 
 
 class Application(Window):
     def __init__(self):
-        self._width = 800;
-        self._height = 600;
+        self._width = 800
+        self._height = 600
         super().__init__(width=self._width,
                          height=self._height,
                          resizable=False,
@@ -245,16 +275,16 @@ class Application(Window):
     def do_draw(self, gc):
         pass
 
-    def do_mouse_motion(self, x, y, dx, dy):
+    def do_mouse_motion(self, point, dx, dy):
         pass
 
-    def do_mouse_press(self, x, y, button, modifiers):
+    def do_mouse_press(self, point, button, modifiers):
         pass
 
-    def do_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+    def do_mouse_drag(self, point, dx, dy, buttons, modifiers):
         pass
 
-    def do_mouse_release(self, x, y, button, modifiers):
+    def do_mouse_release(self, point, button, modifiers):
         pass
 
     def do_key_press(self, symbol, modifiers):
@@ -271,26 +301,26 @@ class Application(Window):
         return self._mouse
 
     def on_mouse_motion(self, x, y, dx, dy):
-        self.mouse._x = x
-        self.mouse._y = y
-        self.mouse._dx = dx
-        self.mouse._dy = dy
-        self.do_mouse_motion(x, y, dx, dy)
+        self._mouse._x = x
+        self._mouse._y = y
+        self._mouse._dx = dx
+        self._mouse._dy = dy
+        self.do_mouse_motion(Point(x, y), dx, dy)
 
     def on_mouse_press(self, x, y, button, modifiers):
-        self.mouse._buttons[button] = True
-        self.do_mouse_press(x, y, button, modifiers)
+        self._mouse._buttons[button] = True
+        self.do_mouse_press(Point(x, y), button, modifiers)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        self.mouse._x = x
-        self.mouse._y = y
-        self.mouse._dx = dx
-        self.mouse._dy = dy
-        self.do_mouse_drag(x, y, dx, dy, buttons, modifiers)
+        self._mouse._x = x
+        self._mouse._y = y
+        self._mouse._dx = dx
+        self._mouse._dy = dy
+        self.do_mouse_drag(Point(x, y), dx, dy, buttons, modifiers)
 
     def on_mouse_release(self, x, y, button, modifiers):
-        self.mouse._buttons[button] = False
-        self.do_mouse_release(x, y, button, modifiers)
+        self._mouse._buttons[button] = False
+        self.do_mouse_release(Point(x, y), button, modifiers)
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.ESCAPE:
