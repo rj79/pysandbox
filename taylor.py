@@ -1,5 +1,4 @@
-import sandbox
-from sandbox import key
+from sandbox import Application, Point, key
 import numpy as np
 import math
 
@@ -25,21 +24,21 @@ class FunctionPlot:
 
     def draw_axis(self, gc):
         gc.set_stroke(1, 1, 1, 1)
-        gc.line(0, self.pheight / 2, self.pwidth, self.pheight / 2)
-        gc.line(self.pwidth / 2, 0, self.pwidth / 2, self.pheight)
+        gc.lines(Point(0, self.pheight / 2), Point(self.pwidth, self.pheight / 2))
+        gc.lines(Point(self.pwidth / 2), Point(0, self.pwidth / 2, self.pheight))
 
     def do_draw(self, gc):
         def scale(point):
             xw = self.xmax - self.xmin
             yw = self.ymax - self.ymin
-            return (point[0] * self.pwidth / xw + self.pwidth / 2, point[1] * self.pheight / yw + self.pheight / 2)
+            return Point(point[0] * self.pwidth / xw + self.pwidth / 2, point[1] * self.pheight / yw + self.pheight / 2)
 
         self.draw_axis(gc)
         for func, color in self.functions:
             points = func.evaluate(self.xmin, self.xmax)
             gc.set_stroke(*color)
             for point in points:
-                gc.lines([scale(point) for point in points])
+                gc.lines(*[scale(point) for point in points])
 
 class Sin:
     def evaluate(self, xmin, xmax):
@@ -131,7 +130,7 @@ def sin_factors(n):
         factors.append(f)
     return factors
 
-class MyApp(sandbox.Application):
+class App(Application):
     def do_init(self):
         self.funcplot = FunctionPlot(self.get_width(), self.get_height())
         self.sin = Sin()
@@ -191,6 +190,6 @@ class MyApp(sandbox.Application):
                 self.better = False
 
 if __name__ == '__main__':
-    app = MyApp()
+    app = App()
     app.start()
  
